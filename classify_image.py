@@ -44,25 +44,67 @@ class ClassifyImage:
 
 
     def set_parameters(self, parameters):
-        optimizer_options = tf.config.optimizer.get_experimental_options()
+        ### tf.config.threading.set_*_op_parallelism_threads()
+        tf.config.threading.set_inter_op_parallelism_threads(parameters.get(
+                "threading.inter_op_parallelism",
+                tf.config.threading.get_inter_op_parallelism_threads()))
+        tf.config.threading.set_intra_op_parallelism_threads(parameters.get(
+                "threading.intra_op_parallelism",
+                tf.config.threading.get_intra_op_parallelism_threads()))
+        print("DEBUG: threading.inter_op_parallelism: "
+                + str(tf.config.threading.get_inter_op_parallelism_threads()))
+        print("DEBUG: threading.intra_op_parallelisms: "
+                + str(tf.config.threading.get_intra_op_parallelism_threads()))
 
-        for key in ["layout_optimizer", "constant_folding", "shape_optimization", "remapping", "arithmetic_optimization",
-                    "dependency_optimization", "loop_optimization", "function_optimization", "debug_stripper",
-                    "disable_model_pruning", "scoped_allocator_optimization", "pin_to_host_optimization",
-                    "implementation_selector", "auto_mixed_precision", "disable_meta_optimizer"]:
-            param_key = "tf.config.optimizer.set_experimental_options." + key
+        ### tf.config.run_functions_eagerly()
+        tf.config.run_functions_eagerly(parameters.get(
+                "run_functions_eagerly",
+                tf.config.functions_run_eagerly()))
+        print("DEBUG: run_functions_eagerly: "
+                + str(tf.config.functions_run_eagerly()))
+
+        ### tf.config.experimental.enable_tensor_float_32_execution()
+        tf.config.experimental.enable_tensor_float_32_execution(parameters.get(
+                "experimental.tensor_float_32_execution",
+                tf.config.experimental.tensor_float_32_execution_enabled()))
+        print("DEBUG: experimental.tensor_float_32_execution: "
+                + str(tf.config.experimental.tensor_float_32_execution_enabled()))
+
+
+        ### tf.config.optimizer.set_jit()
+        tf.config.optimizer.set_jit(parameters.get(
+                "optimizer.jit",
+                tf.config.optimizer.get_jit()))
+        print("DEBUG: optimizer.jit: " + str(tf.config.optimizer.get_jit()))
+
+        ### tf.config.optimizer.set_experimental_options()
+        optimizer_options = tf.config.optimizer.get_experimental_options()
+        for key in ["layout_optimizer", "constant_folding", "shape_optimization",
+                    "remapping", "arithmetic_optimization",
+                    "dependency_optimization", "loop_optimization",
+                    "function_optimization", "debug_stripper",
+                    "disable_model_pruning", "scoped_allocator_optimization",
+                    "pin_to_host_optimization", "implementation_selector",
+                    "auto_mixed_precision", "disable_meta_optimizer"]:
+            param_key = "optimizer.experimental." + key
             if param_key in parameters:
                 optimizer_options[key] = parameters[param_key]
-
         tf.config.optimizer.set_experimental_options(optimizer_options)
-        print("DEBUG: optimizer.experimental_options: " + str(tf.config.optimizer.get_experimental_options()))
+        print("DEBUG: optimizer.experimental: "
+                + str(tf.config.optimizer.get_experimental_options()))
 
-        tf.config.threading.set_inter_op_parallelism_threads(
-            parameters.get("tf.config.threading.inter_op_parallelism", tf.config.threading.get_inter_op_parallelism_threads()))
-        tf.config.threading.set_intra_op_parallelism_threads(
-            parameters.get("tf.config.threading.intra_op_parallelism", tf.config.threading.get_intra_op_parallelism_threads()))
-        print("DEBUG: threading.inter_op_parallelism_threads: " + str(tf.config.threading.get_inter_op_parallelism_threads()))
-        print("DEBUG: threading.intra_op_parallelism_threads: " + str(tf.config.threading.get_intra_op_parallelism_threads()))
+
+        gpus = tf.config.list_physical_devices("GPU")
+        print("DEBUG: GPUs: " + str(gpus))
+
+        ### tf.config.experimental.set_memory_growth() for GPU
+        for gpu in gpus:
+            tf.config.experimental.set_memory_growth(gpu, parameters.get(
+                    "experimental.gpu.memory_growth",
+                    tf.config.experimental.get_memory_growth(gpu)))
+            print("DEBUG: experimental.gpu.memory_growth for " + str(gpu.name)
+                    + ": " + str(tf.config.experimental.get_memory_growth(gpu)))
+
 
 
 
