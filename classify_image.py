@@ -27,7 +27,7 @@ class ClassifyImage:
             self.run()
             t1_stop = time.perf_counter()
             #tf.profiler.experimental.stop()
-            if (i < self.num_warmup_skips): # first few rounds are warmup only
+            if i >= self.num_warmup_skips: # first few rounds are warmup only
                 times.append(round((t1_stop-t1_start) * 1000))
 
         t_mean = round(statistics.mean(times))
