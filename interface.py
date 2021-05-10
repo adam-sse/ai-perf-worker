@@ -20,12 +20,12 @@ try:
 
             data = json.loads(line)
             parameters = data["parameters"]
-            print ("DEBUG: got parameters: " + str(parameters))
+            #print("DEBUG: got parameters: " + str(parameters))
 
             t_mean, t_stdev = ClassifyImage().classifyImageCPU(parameters)
 
             performance = {"time": t_mean, "stdev": t_stdev}
-            print ("DEBUG: sending result: " + str(performance))
+            #print("DEBUG: sending result: " + str(performance))
             perf_data = json.dumps(performance)
             sockfile.write(perf_data + '\n')
             sockfile.flush()

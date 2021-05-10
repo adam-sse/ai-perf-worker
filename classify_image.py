@@ -8,11 +8,12 @@ from tensorflow.python.eager import context
 
 import numpy as np
 
-
 class ClassifyImage:
 
     def __init__(self):
         self.epochs = 1
+        self.num_measures = 5
+        self.num_warmup_skips = 1
 
     def classifyImageCPU(self, parameters):
         self.reset()
@@ -20,20 +21,18 @@ class ClassifyImage:
         self.build_model()
 
         times = []
-        for i in range (0, 5)
+        for i in range (0, self.num_measures):
             #tf.profiler.experimental.start('logdir')
             t1_start = time.perf_counter()
-            history = self.model.fit(self.train_ds, epochs=self.epochs, callbacks=self.callbacks, validation_data=self.val_ds)
+            self.run()
             t1_stop = time.perf_counter()
             #tf.profiler.experimental.stop()
-            if (i != 0): # first round is warmup only
+            if (i < self.num_warmup_skips): # first few rounds are warmup only
                 times.append(round((t1_stop-t1_start) * 1000))
-
-        #history.history['accuracy'], history.history['val_accuracy']
 
         t_mean = round(statistics.mean(times))
         t_stdev = round(statistics.stdev(times))
-        print (str(times) + " -> " + str(t_mean) + "±" + str(t_stdev) + " ms")
+        print("DEBUG: " + str(times) + " -> " + str(t_mean) + "±" + str(t_stdev) + " ms")
 
         return t_mean, t_stdev
 
@@ -45,28 +44,25 @@ class ClassifyImage:
 
 
     def set_parameters(self, parameters):
-        #tf.config.optimizer.set_experimental_options({
-        #    "layout_optimizer": parameters["tf.config.optimizer.set_experimental_options.layout_optimizer"],
-        #    "constant_folding": parameters["tf.config.optimizer.set_experimental_options.constant_folding"],
-        #    "shape_optimization": parameters["tf.config.optimizer.set_experimental_options.shape_optimization"],
-        #    "remapping": parameters["tf.config.optimizer.set_experimental_options.remapping"],
-        #    "arithmetic_optimization": parameters["tf.config.optimizer.set_experimental_options.arithmetic_optimization"],
-        #    "dependency_optimization": parameters["tf.config.optimizer.set_experimental_options.dependency_optimization"],
-        #    "loop_optimization": parameters["tf.config.optimizer.set_experimental_options.loop_optimization"],
-        #    "function_optimization": parameters["tf.config.optimizer.set_experimental_options.function_optimization"],
-        #    "debug_stripper": parameters["tf.config.optimizer.set_experimental_options.debug_stripper"],
-        #    "disable_model_pruning": parameters["tf.config.optimizer.set_experimental_options.disable_model_pruning"],
-        #    "scoped_allocator_optimization": parameters["tf.config.optimizer.set_experimental_options.scoped_allocator_optimization"],
-        #    "pin_to_host_optimization": parameters["tf.config.optimizer.set_experimental_options.pin_to_host_optimization"],
-        #    "implementation_selector": parameters["tf.config.optimizer.set_experimental_options.implementation_selector"],
-        #    "auto_mixed_precision": parameters["tf.config.optimizer.set_experimental_options.auto_mixed_precision"],
-        #    "disable_meta_optimizer": parameters["tf.config.optimizer.set_experimental_options.disable_meta_optimizer"]
-        #})
-        #print ("tf.config.optimizer.experimental_options = " + str(tf.config.optimizer.get_experimental_options()))
+        optimizer_options = tf.config.optimizer.get_experimental_options()
 
-        tf.config.threading.set_inter_op_parallelism_threads(parameters["tf.config.threading.inter_op_parallelism"])
-        tf.config.threading.set_intra_op_parallelism_threads(parameters["tf.config.threading.intra_op_parallelism"])
-        print ("inter: " + str(tf.config.threading.get_inter_op_parallelism_threads()) + ", intra: " + str(tf.config.threading.get_intra_op_parallelism_threads()))
+        for key in ["layout_optimizer", "constant_folding", "shape_optimization", "remapping", "arithmetic_optimization",
+                    "dependency_optimization", "loop_optimization", "function_optimization", "debug_stripper",
+                    "disable_model_pruning", "scoped_allocator_optimization", "pin_to_host_optimization",
+                    "implementation_selector", "auto_mixed_precision", "disable_meta_optimizer"]:
+            param_key = "tf.config.optimizer.set_experimental_options." + key
+            if param_key in parameters:
+                optimizer_options[key] = parameters[param_key]
+
+        tf.config.optimizer.set_experimental_options(optimizer_options)
+        print("DEBUG: optimizer.experimental_options: " + str(tf.config.optimizer.get_experimental_options()))
+
+        tf.config.threading.set_inter_op_parallelism_threads(
+            parameters.get("tf.config.threading.inter_op_parallelism", tf.config.threading.get_inter_op_parallelism_threads()))
+        tf.config.threading.set_intra_op_parallelism_threads(
+            parameters.get("tf.config.threading.intra_op_parallelism", tf.config.threading.get_intra_op_parallelism_threads()))
+        print("DEBUG: threading.inter_op_parallelism_threads: " + str(tf.config.threading.get_inter_op_parallelism_threads()))
+        print("DEBUG: threading.intra_op_parallelism_threads: " + str(tf.config.threading.get_intra_op_parallelism_threads()))
 
 
 
@@ -169,3 +165,6 @@ class ClassifyImage:
             metrics=["accuracy"],
         )
 
+    def run(self):
+        history = self.model.fit(self.train_ds, epochs=self.epochs, callbacks=self.callbacks, validation_data=self.val_ds)
+        #history.history['accuracy'], history.history['val_accuracy']
