@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
-from ai_interface import AI_Interface
+from ai_abstraction import AI_Abstraction
 
 import numpy as np
 
