@@ -1,112 +1,28 @@
-import time
-import statistics
-
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
-from tensorflow.python.eager import context
+from ai_interface import AI_Interface
 
 import numpy as np
 
-class ClassifyImage:
+class ClassifyImage(AI_Interface):
 
     def __init__(self):
         self.epochs = 1
-        self.num_measures = 5
+        self.num_measures = 3
         self.num_warmup_skips = 1
+        self.device = "/GPU:0"
 
-    def classifyImageCPU(self, parameters):
-        self.reset()
-        self.set_parameters(parameters)
-        self.build_model()
-
-        times = []
-        for i in range (0, self.num_measures):
-            #tf.profiler.experimental.start('logdir')
-            t1_start = time.perf_counter()
-            self.run()
-            t1_stop = time.perf_counter()
-            #tf.profiler.experimental.stop()
-            if i >= self.num_warmup_skips: # first few rounds are warmup only
-                times.append(round((t1_stop-t1_start) * 1000))
-
-        t_mean = round(statistics.mean(times))
-        t_stdev = round(statistics.stdev(times))
-        print("DEBUG: " + str(times) + " -> " + str(t_mean) + "±" + str(t_stdev) + " ms")
-
+    def measure(self, parameters):
+        t_mean, t_stdev = super().measure(parameters)
         return t_mean, t_stdev
 
-    def reset(self):
-        context._context = None
-        context._create_context()
-        tf.random.set_seed(130)
-        np.random.seed(130)
 
+    def reset(self):
+        super().reset()
 
     def set_parameters(self, parameters):
-        ### tf.config.threading.set_*_op_parallelism_threads()
-        tf.config.threading.set_inter_op_parallelism_threads(parameters.get(
-                "threading.inter_op_parallelism",
-                tf.config.threading.get_inter_op_parallelism_threads()))
-        tf.config.threading.set_intra_op_parallelism_threads(parameters.get(
-                "threading.intra_op_parallelism",
-                tf.config.threading.get_intra_op_parallelism_threads()))
-        print("DEBUG: threading.inter_op_parallelism: "
-                + str(tf.config.threading.get_inter_op_parallelism_threads()))
-        print("DEBUG: threading.intra_op_parallelisms: "
-                + str(tf.config.threading.get_intra_op_parallelism_threads()))
-
-        ### tf.config.run_functions_eagerly()
-        tf.config.run_functions_eagerly(parameters.get(
-                "run_functions_eagerly",
-                tf.config.functions_run_eagerly()))
-        print("DEBUG: run_functions_eagerly: "
-                + str(tf.config.functions_run_eagerly()))
-
-        ### tf.config.experimental.enable_tensor_float_32_execution()
-        tf.config.experimental.enable_tensor_float_32_execution(parameters.get(
-                "experimental.tensor_float_32_execution",
-                tf.config.experimental.tensor_float_32_execution_enabled()))
-        print("DEBUG: experimental.tensor_float_32_execution: "
-                + str(tf.config.experimental.tensor_float_32_execution_enabled()))
-
-
-        ### tf.config.optimizer.set_jit()
-        tf.config.optimizer.set_jit(parameters.get(
-                "optimizer.jit",
-                tf.config.optimizer.get_jit()))
-        print("DEBUG: optimizer.jit: " + str(tf.config.optimizer.get_jit()))
-
-        ### tf.config.optimizer.set_experimental_options()
-        optimizer_options = tf.config.optimizer.get_experimental_options()
-        for key in ["layout_optimizer", "constant_folding", "shape_optimization",
-                    "remapping", "arithmetic_optimization",
-                    "dependency_optimization", "loop_optimization",
-                    "function_optimization", "debug_stripper",
-                    "disable_model_pruning", "scoped_allocator_optimization",
-                    "pin_to_host_optimization", "implementation_selector",
-                    "auto_mixed_precision", "disable_meta_optimizer"]:
-            param_key = "optimizer.experimental." + key
-            if param_key in parameters:
-                optimizer_options[key] = parameters[param_key]
-        tf.config.optimizer.set_experimental_options(optimizer_options)
-        print("DEBUG: optimizer.experimental: "
-                + str(tf.config.optimizer.get_experimental_options()))
-
-
-        gpus = tf.config.list_physical_devices("GPU")
-        print("DEBUG: GPUs: " + str(gpus))
-
-        ### tf.config.experimental.set_memory_growth() for GPU
-        for gpu in gpus:
-            tf.config.experimental.set_memory_growth(gpu, parameters.get(
-                    "experimental.gpu.memory_growth",
-                    tf.config.experimental.get_memory_growth(gpu)))
-            print("DEBUG: experimental.gpu.memory_growth for " + str(gpu.name)
-                    + ": " + str(tf.config.experimental.get_memory_growth(gpu)))
-
-
-
+        super().set_parameters(parameters)
 
     def build_model(self):
         image_size = (180, 180)
@@ -193,10 +109,9 @@ class ClassifyImage:
             x = layers.Dropout(0.5)(x)
             outputs = layers.Dense(units, activation=activation)(x)
             return keras.Model(inputs, outputs)
-
-
+            
         self.model = make_model(input_shape=image_size + (3,), num_classes=2)
-        keras.utils.plot_model(self.model, show_shapes=True)
+        #keras.utils.plot_model(self.model, show_shapes=True)
 
         self.callbacks = [
             keras.callbacks.ModelCheckpoint("save_at_{epoch}.h5"),
