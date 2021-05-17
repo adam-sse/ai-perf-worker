@@ -5,24 +5,13 @@ from ai_abstraction import AI_Abstraction
 
 import numpy as np
 
-class ClassifyImage(AI_Interface):
+class ClassifyImage(AI_Abstraction):
 
     def __init__(self):
         self.epochs = 1
         self.num_measures = 3
         self.num_warmup_skips = 1
         self.device = "/GPU:0"
-
-    def measure(self, parameters):
-        t_mean, t_stdev = super().measure(parameters)
-        return t_mean, t_stdev
-
-
-    def reset(self):
-        super().reset()
-
-    def set_parameters(self, parameters):
-        super().set_parameters(parameters)
 
     def build_model(self):
         image_size = (180, 180)
@@ -109,7 +98,7 @@ class ClassifyImage(AI_Interface):
             x = layers.Dropout(0.5)(x)
             outputs = layers.Dense(units, activation=activation)(x)
             return keras.Model(inputs, outputs)
-            
+
         self.model = make_model(input_shape=image_size + (3,), num_classes=2)
         #keras.utils.plot_model(self.model, show_shapes=True)
 

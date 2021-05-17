@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-#from classify_image import ClassifyImage
 from tensorflow.python.eager import context
 import numpy as np
 import tensorflow as tf
@@ -7,16 +6,16 @@ import statistics
 import time
 
 class AI_Abstraction(ABC):
-    @abstractmethod
+
     def measure(self, parameters):
         times = []
-        
+
         for i in range (0, self.num_measures):
-            #tf.profiler.experimental.start('logdir')
             self.reset()
             self.set_parameters(parameters)
-            self.build_model()            
-            t1_start = time.perf_counter()            
+            self.build_model()
+            #tf.profiler.experimental.start('logdir')
+            t1_start = time.perf_counter()
             with tf.device(self.device):
                 self.run()
             t1_stop = time.perf_counter()
@@ -28,22 +27,16 @@ class AI_Abstraction(ABC):
         t_stdev = round(statistics.stdev(times))
         print("DEBUG: " + str(times) + " -> " + str(t_mean) + "±" + str(t_stdev) + " ms")
         return t_mean, t_stdev
-    
-    #@abstractmethod
-    #def time_measure(self, parameters):
-    #    self.reset()
-    #    SetParameters().set_parameters(parameters)
-    
-    @abstractmethod
+
     def reset(self):
         print("Setting seeds")
         context._context = None
         context._create_context()
         tf.random.set_seed(130)
         np.random.seed(130)
-        
+
     def set_parameters(self, parameters):    
-                ### tf.config.threading.set_*_op_parallelism_threads()
+        ### tf.config.threading.set_*_op_parallelism_threads()
         tf.config.threading.set_inter_op_parallelism_threads(parameters.get(
                 "threading.inter_op_parallelism",
                 tf.config.threading.get_inter_op_parallelism_threads()))
@@ -102,17 +95,11 @@ class AI_Abstraction(ABC):
             print("DEBUG: experimental.gpu.memory_growth for " + str(gpu.name)
                     + ": " + str(tf.config.experimental.get_memory_growth(gpu)))
 
-        
-    @abstractmethod    
+
+    @abstractmethod
     def build_model(self):
         pass
-    
+
     @abstractmethod
     def run(self):
         print("Start")
-
-
-#class Perform():
-#    def perform(self, parameters):
-#        a = ClassifyImage(AI_Interface)        
-#        a.classifyImageCPU(parameters)
