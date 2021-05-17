@@ -6,7 +6,7 @@ import tensorflow as tf
 import statistics
 import time
 
-class AI_Interface(ABC):
+class AI_Abstraction(ABC):
     @abstractmethod
     def measure(self, parameters):
         times = []
