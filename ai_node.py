@@ -1,7 +1,6 @@
 import socket
-import json
-
-from classify_image import ClassifyImage
+import subprocess
+import sys
 
 ip = '0.0.0.0'
 port = 50021
@@ -18,16 +17,14 @@ try:
             if not line:
                 break
 
-            data = json.loads(line)
-            parameters = data["parameters"]
-            #print("DEBUG: got parameters: " + str(parameters))
+            result = subprocess.check_output(["python3", "ai_executor.py", line])
+            result = result.decode(sys.getdefaultencoding())
 
-            t_mean, t_stdev = ClassifyImage().measure(parameters)
+            lines = result.splitlines()
+            print(str(lines))
+            perf_data = lines[len(lines) - 1]
 
-            performance = {"time": t_mean, "stdev": t_stdev}
-            #print("DEBUG: sending result: " + str(performance))
-            perf_data = json.dumps(performance)
-            sockfile.write(perf_data + '\n')
+            sockfile.write(perf_data)
             sockfile.flush()
 
 finally:
