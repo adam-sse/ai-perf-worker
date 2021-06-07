@@ -24,7 +24,7 @@ try:
             print(str(lines))
             perf_data = lines[len(lines) - 1]
 
-            sockfile.write(perf_data)
+            sockfile.write(perf_data + "\n")
             sockfile.flush()
 
 finally:
