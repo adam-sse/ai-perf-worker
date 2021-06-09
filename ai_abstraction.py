@@ -26,7 +26,7 @@ class AI_Abstraction(ABC):
         t_mean = round(statistics.mean(times))
         t_stdev = round(statistics.stdev(times))
         print("DEBUG: " + str(times) + " -> " + str(t_mean) + "±" + str(t_stdev) + " ms")
-        return t_mean, t_stdev
+        return t_mean, t_stdev, times
 
     def reset(self):
         print("Setting seeds")
@@ -35,7 +35,7 @@ class AI_Abstraction(ABC):
         tf.random.set_seed(130)
         np.random.seed(130)
 
-    def set_parameters(self, parameters):    
+    def set_parameters(self, parameters):
         ### tf.config.threading.set_*_op_parallelism_threads()
         tf.config.threading.set_inter_op_parallelism_threads(parameters.get(
                 "threading.inter_op_parallelism",

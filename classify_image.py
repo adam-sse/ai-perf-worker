@@ -9,8 +9,8 @@ class ClassifyImage(AI_Abstraction):
 
     def __init__(self):
         self.epochs = 1
-        self.num_measures = 3
-        self.num_warmup_skips = 1
+        self.num_measures = 8
+        self.num_warmup_skips = 2
         self.device = "/GPU:0"
 
     def build_model(self):

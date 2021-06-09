@@ -8,9 +8,9 @@ data = json.loads(sys.argv[1])
 parameters = data["parameters"]
 #print("DEBUG: got parameters: " + str(parameters))
 
-t_mean, t_stdev = ClassifyImage().measure(parameters)
+t_mean, t_stdev, measures = ClassifyImage().measure(parameters)
 
-performance = {"time": t_mean, "stdev": t_stdev}
+performance = {"time": t_mean, "stdev": t_stdev, "measures": measures}
 #print("DEBUG: sending result: " + str(performance))
 perf_data = json.dumps(performance)
 
